@@ -16,7 +16,13 @@
 
 /* BLE connection */
 struct bt_conn *conn;
-uint16_t value = 555;
+
+/* BLE data params */
+static uint8 tf_buffer_len = 3;
+static uint16_t tf_buffer[] = {1000,2000,3000};
+
+static bool notify = false;
+
 
 /* TF Custom Service  -- initialise a GUID */
 static struct bt_uuid_128 tf_service_uuid = BT_UUID_INIT_128(
@@ -54,20 +60,31 @@ static const struct bt_data ad[] = {
 static void mpu_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	ARG_UNUSED(attr);
-	printk("CCC CHANGED");
+    notify = value == 1 ? true : false;
+	printk("Notifications set to = %d", notify);
 }
 
+static ssize_t read_tflite(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr, void *buf,
+			     uint16_t len, uint16_t offset)
+{
 
+	uint16_t *value = (uint16_t*)attr->user_data;
+    printk("Read callback called with: value %d, len %d, offset %d \n", value, len, offset);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 sizeof(*value)*3);
+}
 
 BT_GATT_SERVICE_DEFINE(stsensor_svc,
     BT_GATT_PRIMARY_SERVICE(&tf_service_uuid),
     BT_GATT_CHARACTERISTIC(
         &tf_prob_char_id.uuid, 
-        BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_READ,
+        BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
         BT_GATT_PERM_READ,
+        read_tflite,
         NULL,
-        NULL,
-        (void*)1
+        &tf_buffer
         ),
     BT_GATT_CCC(mpu_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE)
 );

@@ -66,7 +66,7 @@ void tflite_model_setup()
     inference_count = 0;
 }
 
-void tflite_model_predict(float *buffer)
+float *tflite_model_predict(float *buffer)
 {
 
     // place input into input tensor
@@ -79,11 +79,13 @@ void tflite_model_predict(float *buffer)
     {
         TF_LITE_REPORT_ERROR(error_reporter,
                              "INVOKE failed on interpreter");
-        return;
+        return NULL;
     }
 
     float *y = interpreter->typed_output_tensor<float>(0);
 
     printf("----- OUTPUT ----- \n");
     printf("%f , %f , %f , total=%f\n", y[0], y[1], y[2], y[0] + y[1] + y[2]);
+
+    return y;
 }

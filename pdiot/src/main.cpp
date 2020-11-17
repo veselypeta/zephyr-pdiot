@@ -22,6 +22,26 @@ void bluetoth_setup()
     }
 }
 
+void tflite_send_ble_notif()
+{
+    if (conn)
+    {
+        if (notify)
+        {
+            int err = bt_gatt_notify(NULL, &(stsensor_svc.attrs[1]), &tf_buffer, sizeof(tf_buffer[0]) * tf_buffer_len);
+        }
+    }
+}
+
+void copy_data_to_ble_buffer(float *preds)
+{
+    for (int i = 0; i < tf_buffer_len; i++)
+    {
+        uint16_t val = preds[i] * 1000;
+        tf_buffer[i] = val;
+    }
+}
+
 void main(void)
 {
     bluetoth_setup();
@@ -46,10 +66,10 @@ void main(void)
     {
         if (counter == 50)
         {
-            tflite_model_predict(input_tensor_array);
-            // TODO - send predicted results over bluetooth
+            float* res_buf = tflite_model_predict(input_tensor_array);
+            copy_data_to_ble_buffer(res_buf);
+            tflite_send_ble_notif();
             counter = 0;
-            LOG_INF("Bluetooth initialized");
         }
         else
         {

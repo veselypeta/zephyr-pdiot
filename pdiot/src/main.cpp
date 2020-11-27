@@ -33,6 +33,26 @@ void tflite_send_ble_notif()
     }
 }
 
+void send_ble_accel_packet(AccelerometerData data){
+    int x = data.x * 1000;
+    int y = data.y * 1000;
+    int z = data.z * 1000;
+
+    accel_buffer[0] = x;
+    accel_buffer[1] = y;
+    accel_buffer[2] = z;
+
+    printf("accel : %d, %d, %d \n", x, y, z);
+
+
+    if (conn){
+        if(accNotify){
+            int err = bt_gatt_notify(NULL, &(stsensor_svc.attrs[4]), &accel_buffer, sizeof(accel_buffer[0]) * acc_buffer_len);
+        }
+    }
+
+}
+
 void copy_data_to_ble_buffer(float *preds)
 {
     for (int i = 0; i < tf_buffer_len; i++)
@@ -66,7 +86,7 @@ void main(void)
     {
         if (counter == 50)
         {
-            float* res_buf = tflite_model_predict(input_tensor_array);
+            float *res_buf = tflite_model_predict(input_tensor_array);
             copy_data_to_ble_buffer(res_buf);
             tflite_send_ble_notif();
             counter = 0;
@@ -80,6 +100,7 @@ void main(void)
             input_tensor_array[(counter * 3) + 2] = acc_data.z;
 
             counter++;
+            send_ble_accel_packet(acc_data);
 
             k_sleep(K_MSEC(80 /*12.5 Hz*/));
         }

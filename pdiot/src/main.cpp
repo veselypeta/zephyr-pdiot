@@ -42,8 +42,6 @@ void send_ble_accel_packet(AccelerometerData data){
     accel_buffer[1] = y;
     accel_buffer[2] = z;
 
-    printf("accel : %d, %d, %d \n", x, y, z);
-
 
     if (conn){
         if(accNotify){
